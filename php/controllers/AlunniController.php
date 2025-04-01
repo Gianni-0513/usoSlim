@@ -71,4 +71,36 @@ class AlunniController
       return $response->withHeader("Content-type", "application/json")->withStatus(404);
     }
   }
+
+  public function filtro(Request $request, Response $response, $args){
+    $mysqli_connection = new MySQLi('my_mariadb', 'root', 'ciccio', 'scuola');
+    $result = $mysqli_connection->query("SELECT * FROM alunni WHERE nome LIKE '%" .$args["key"]. "%' OR cognome LIKE '%" .$args["key"]. "%'");
+    $results = $result->fetch_all(MYSQLI_ASSOC);
+
+    $response->getBody()->write(json_encode($results));
+    return $response->withHeader("Content-type", "application/json")->withStatus(200);
+  }
+
+  public function riordina(Request $request, Response $response, $args){
+    $mysqli_connection = new MySQLi('my_mariadb', 'root', 'ciccio', 'scuola');
+
+    $found = false;
+    $columns = $mysqli_connection->query("describe alunni")->fetch_all(MYSQLI_ASSOC);
+    foreach($columns as $col){
+      if($col["Field"] == $args["col"]){
+        $found = true;
+        break;
+      }
+    }
+
+    if(!$found){
+      $response->getBody()->write("colonna non trovata");
+      return $response->withHeader("Content-type", "application/json")->withStatus(404);
+    }
+
+
+    $results = $mysqli_connection->query("SELECT * FROM alunni ORDER BY " .$args["col"]. " DESC")->fetch_all(MYSQLI_ASSOC);
+    $response->getBody()->write(json_encode($results));
+    return $response->withHeader("Content-type", "application/json")->withStatus(200);
+  }
 }
